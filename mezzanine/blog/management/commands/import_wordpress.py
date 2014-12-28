@@ -95,8 +95,6 @@ class Command(BaseImporterCommand):
             pub_date = getattr(entry, "published_parsed", entry.updated_parsed)
             pub_date = datetime.fromtimestamp(mktime(pub_date))
             pub_date -= timedelta(seconds=timezone)
-            print entry
-            raise
 
             # Tags and categories are all under "tags" marked with a scheme.
             terms = defaultdict(set)

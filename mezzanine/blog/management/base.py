@@ -133,6 +133,17 @@ class BaseImporterCommand(BaseCommand):
             "last_name": last_name,
         })
 
+    def create_users(self):
+        for u in self.users:
+            user = User.objects.create_user(
+                u['user_name'],
+                u['email'],
+                'dsfgsdfg9879879ujklsghfh&*^&^T')
+            user.first_name = u['first_name']
+            user.last_name = u['last_name']
+            user.save()
+            print("Imported user: %s" % user)
+
     def trunc(self, model, prompt, **fields):
         """
         Truncates fields values for the given model. Prompts for a new
@@ -169,18 +180,25 @@ class BaseImporterCommand(BaseCommand):
         site = Site.objects.get_current()
         verbosity = int(options.get("verbosity", 1))
         prompt = options.get("interactive")
+        include_users = options.get("include_users")
 
-        # Validate the Mezzanine user.
-        if mezzanine_user is None:
-            raise CommandError("No Mezzanine user has been specified")
-        try:
-            mezzanine_user = User.objects.get(username=mezzanine_user)
-        except User.DoesNotExist:
-            raise CommandError("Invalid Mezzanine user: %s" % mezzanine_user)
+
+        if not include_users:
+            # Validate the Mezzanine user.
+            if mezzanine_user is None:
+                raise CommandError("No Mezzanine user has been specified")
+            try:
+                mezzanine_user = User.objects.get(username=mezzanine_user)
+            except User.DoesNotExist:
+                raise CommandError("Invalid Mezzanine user: %s" % mezzanine_user)
 
         # Run the subclassed ``handle_import`` and save posts, tags,
         # categories, and comments to the DB.
         self.handle_import(options)
+
+        if include_users:
+            self.create_users()
+
         for post_data in self.posts:
             categories = post_data.pop("categories")
             tags = post_data.pop("tags")
