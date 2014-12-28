@@ -54,7 +54,7 @@ class BaseImporterCommand(BaseCommand):
         super(BaseImporterCommand, self).__init__(**kwargs)
 
     def add_post(self, title=None, content=None, old_url=None, pub_date=None,
-                 tags=None, categories=None, comments=None):
+                 tags=None, categories=None, comments=None, author=None):
         """
         Adds a post to the post list for processing.
 
@@ -76,6 +76,7 @@ class BaseImporterCommand(BaseCommand):
             comments = []
         self.posts.append({
             "title": force_text(title),
+            "author": force_text(author),
             "publish_date": pub_date,
             "content": force_text(content),
             "categories": categories,
@@ -135,14 +136,17 @@ class BaseImporterCommand(BaseCommand):
 
     def create_users(self):
         for u in self.users:
-            user = User.objects.create_user(
-                u['user_name'],
-                u['email'],
-                'dsfgsdfg9879879ujklsghfh&*^&^T')
-            user.first_name = u['first_name']
-            user.last_name = u['last_name']
-            user.save()
-            print("Imported user: %s" % user)
+            try:
+                user = User.objects.get(username=u['user_name'])
+            except User.DoesNotExist:
+                user = User.objects.create_user(
+                    u['user_name'],
+                    u['email'],
+                    'dsfgsdfg9879879ujklsghfh&*^&^T')
+                user.first_name = u['first_name']
+                user.last_name = u['last_name']
+                user.save()
+                print("Imported user: %s" % user)
 
     def trunc(self, model, prompt, **fields):
         """
@@ -204,12 +208,16 @@ class BaseImporterCommand(BaseCommand):
             tags = post_data.pop("tags")
             comments = post_data.pop("comments")
             old_url = post_data.pop("old_url")
+            author = post_data.pop("author")
             post_data = self.trunc(BlogPost, prompt, **post_data)
             initial = {
                 "title": post_data.pop("title"),
-                "user": mezzanine_user,
+                "user": User.objects.get(username=author) if include_users else mezzanine_user,
             }
-            post, created = BlogPost.objects.get_or_create(**initial)
+            try:
+                post, created = BlogPost.objects.get_or_create(**initial)
+            except UnicodeEncodeError:
+                continue
             for k, v in post_data.items():
                 setattr(post, k, v)
             post.save()

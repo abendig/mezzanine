@@ -90,9 +90,15 @@ class Command(BaseImporterCommand):
             xmlitem = xmlitems[i]
             content = linebreaks(self.wp_caption(entry.content[0]["value"]))
 
+            author = entry['author']
+
             # Get the time struct of the published date if possible and
             # the updated date if we can't.
             pub_date = getattr(entry, "published_parsed", entry.updated_parsed)
+            if not pub_date:
+                # TODO: Deal with this better.
+                continue
+
             pub_date = datetime.fromtimestamp(mktime(pub_date))
             pub_date -= timedelta(seconds=timezone)
 
@@ -105,21 +111,23 @@ class Command(BaseImporterCommand):
                 post = self.add_post(title=entry.title, content=content,
                                      pub_date=pub_date, tags=terms["tag"],
                                      categories=terms["category"],
-                                     old_url=entry.id)
+                                     old_url=entry.id, author=author)
 
-                # Get the comments from the xml doc.
-                for c in xmlitem.getElementsByTagName("wp:comment"):
-                    name = self.get_text(c, "author", c.CDATA_SECTION_NODE)
-                    email = self.get_text(c, "author_email", c.TEXT_NODE)
-                    url = self.get_text(c, "author_url", c.TEXT_NODE)
-                    body = self.get_text(c, "content", c.CDATA_SECTION_NODE)
-                    pub_date = self.get_text(c, "date_gmt", c.TEXT_NODE)
-                    fmt = "%Y-%m-%d %H:%M:%S"
-                    pub_date = datetime.strptime(pub_date, fmt)
-                    pub_date -= timedelta(seconds=timezone)
-                    self.add_comment(post=post, name=name, email=email,
-                                     body=body, website=url,
-                                     pub_date=pub_date)
+                # TODO: Enable the following and properly handle comments.
+
+                # # Get the comments from the xml doc.
+                # for c in xmlitem.getElementsByTagName("wp:comment"):
+                #     name = self.get_text(c, "author", c.CDATA_SECTION_NODE)
+                #     email = self.get_text(c, "author_email", c.TEXT_NODE)
+                #     url = self.get_text(c, "author_url", c.TEXT_NODE)
+                #     body = self.get_text(c, "content", c.CDATA_SECTION_NODE)
+                #     pub_date = self.get_text(c, "date_gmt", c.TEXT_NODE)
+                #     fmt = "%Y-%m-%d %H:%M:%S"
+                #     pub_date = datetime.strptime(pub_date, fmt)
+                #     pub_date -= timedelta(seconds=timezone)
+                #     self.add_comment(post=post, name=name, email=email,
+                #                      body=body, website=url,
+                #                      pub_date=pub_date)
 
             elif entry.wp_post_type == "page":
                 old_id = getattr(entry, "wp_post_id")
