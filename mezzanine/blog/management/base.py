@@ -34,6 +34,10 @@ class BaseImporterCommand(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option("-m", "--mezzanine-user", dest="mezzanine_user",
             help="Mezzanine username to assign the imported blog posts to."),
+        make_option("--include-users", action="store_true",
+            dest="include_users", default=False,
+            help="Associates blog posts with their appropriate users. If they "
+                 "do not exist, they will be created."),
         make_option("--noinput", action="store_false", dest="interactive",
             default=True, help="Do NOT prompt for input of any kind. "
                                "Fields will be truncated if too long."),
@@ -46,6 +50,7 @@ class BaseImporterCommand(BaseCommand):
     def __init__(self, **kwargs):
         self.posts = []
         self.pages = []
+        self.users = []
         super(BaseImporterCommand, self).__init__(**kwargs)
 
     def add_post(self, title=None, content=None, old_url=None, pub_date=None,
@@ -115,6 +120,17 @@ class BaseImporterCommand(BaseCommand):
             "submit_date": pub_date,
             "user_url": website,
             "comment": body,
+        })
+
+    def add_user(self, email, user_name, first_name, last_name):
+        """
+        Adds a user, if it does not yet exist.
+        """
+        self.users.append({
+            "user_name": user_name,
+            "email": email,
+            "first_name": first_name,
+            "last_name": last_name,
         })
 
     def trunc(self, model, prompt, **fields):

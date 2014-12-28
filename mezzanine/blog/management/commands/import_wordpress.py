@@ -24,11 +24,11 @@ class Command(BaseImporterCommand):
         make_option("-u", "--url", dest="url", help="URL to import file"),
     )
 
-    def get_text(self, xml, name, nodetype):
+    def get_text(self, xml, name, nodetype, element_prefix="wp:comment_"):
         """
         Gets the element's text value from the XML object provided.
         """
-        nodes = xml.getElementsByTagName("wp:comment_" + name)[0].childNodes
+        nodes = xml.getElementsByTagName(element_prefix + name)[0].childNodes
         return "".join([n.data for n in nodes if n.nodeType == nodetype])
 
     def handle_import(self, options):
@@ -51,6 +51,38 @@ class Command(BaseImporterCommand):
         # xml.dom.minidom is used simply to pull the comments when we
         # get to them.
         xml = parse(url)
+        xmlauthors = xml.getElementsByTagName("wp:author")
+        for author in xmlauthors:
+            email = self.get_text(
+                author,
+                "email",
+                author.TEXT_NODE,
+                element_prefix="wp:author_"
+            )
+            user_name = self.get_text(
+                author,
+                "login",
+                author.TEXT_NODE,
+                element_prefix="wp:author_"
+            )
+            first_name = self.get_text(
+                author,
+                "first_name",
+                author.CDATA_SECTION_NODE,
+                element_prefix="wp:author_"
+            )
+            last_name = self.get_text(
+                author,
+                "last_name",
+                author.CDATA_SECTION_NODE,
+                element_prefix="wp:author_"
+            )
+            self.add_user(
+                email=email,
+                user_name=user_name,
+                first_name=first_name,
+                last_name=last_name)
+
         xmlitems = xml.getElementsByTagName("item")
 
         for (i, entry) in enumerate(feed["entries"]):
@@ -63,6 +95,8 @@ class Command(BaseImporterCommand):
             pub_date = getattr(entry, "published_parsed", entry.updated_parsed)
             pub_date = datetime.fromtimestamp(mktime(pub_date))
             pub_date -= timedelta(seconds=timezone)
+            print entry
+            raise
 
             # Tags and categories are all under "tags" marked with a scheme.
             terms = defaultdict(set)
