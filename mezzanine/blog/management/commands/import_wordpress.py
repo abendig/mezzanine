@@ -4,6 +4,7 @@ from future.builtins import int
 from collections import defaultdict
 from datetime import datetime, timedelta
 from optparse import make_option
+import pytz
 import re
 from time import mktime, timezone
 from xml.dom.minidom import parse
@@ -100,7 +101,7 @@ class Command(BaseImporterCommand):
                 continue
 
             pub_date = datetime.fromtimestamp(mktime(pub_date))
-            pub_date -= timedelta(seconds=timezone)
+            pub_date = pub_date.replace(tzinfo=pytz.UTC)
 
             # Tags and categories are all under "tags" marked with a scheme.
             terms = defaultdict(set)
