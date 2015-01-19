@@ -45,6 +45,8 @@ class BaseImporterCommand(BaseCommand):
             dest="in_navigation", help="Add any imported pages to navigation"),
         make_option("-f", "--footer", action="store_true", dest="in_footer",
             help="Add any imported pages to footer navigation"),
+        make_option("--map_admin", action="store", type="string",
+            dest="map_admin", help="Assigns content created by old admin user to a different user."),
     )
 
     def __init__(self, **kwargs):
@@ -185,7 +187,7 @@ class BaseImporterCommand(BaseCommand):
         verbosity = int(options.get("verbosity", 1))
         prompt = options.get("interactive")
         include_users = options.get("include_users")
-
+        map_admin = options.get("map_admin")
 
         if not include_users:
             # Validate the Mezzanine user.
@@ -209,6 +211,8 @@ class BaseImporterCommand(BaseCommand):
             comments = post_data.pop("comments")
             old_url = post_data.pop("old_url")
             author = post_data.pop("author")
+            if author == 'admin' and map_admin:
+                author = map_admin
             post_data = self.trunc(BlogPost, prompt, **post_data)
             initial = {
                 "title": post_data.pop("title"),
