@@ -144,7 +144,7 @@ class BaseImporterCommand(BaseCommand):
                 user = User.objects.create_user(
                     u['user_name'],
                     u['email'],
-                    'dsfgsdfg9879879ujklsghfh&*^&^T')
+                    User.objects.make_random_password(length=15))
                 user.first_name = u['first_name']
                 user.last_name = u['last_name']
                 user.save()
